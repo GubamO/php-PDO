@@ -1,5 +1,6 @@
 
 <?php
+
 const HOST_NAME	= "mysql";
 const DB_NAME	= "weatherapp";
 const USER_NAME	= "gubamo";
@@ -10,7 +11,7 @@ function bdConnect() {
     try {
         $strConnection = "mysql:host=".HOST_NAME.";dbname=".DB_NAME;
         $arrExtraParam= array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8");
-        $pdo = new PDO($strConnection, USER_NAME, PASSWORD, $arrExtraParam);
+        $pdo = new PDO($strConnection, USER_NAME, PASSWORD, $arrExtraParam); // Instanciate connexion
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         return $pdo;
     }
@@ -49,12 +50,82 @@ function showMeteoTable() {
 
         foreach ($meteoValues as $value) {
             echo "<tr><td>".$value['ville']."</td><td>".$value['haut']."</td><td>".$value['bas']."</td><td>".buildCheckBox($value)."</td></tr>";
-   }
+        }
 
-   $meteoValues = NULL;
-   $pdo = NULL;
+        $meteoValues = NULL;
+        $pdo = NULL;
+    }
+
 }
 
+function deleteEntry($cities) {
+    $pdo = bdConnect();
+
+    foreach ($cities as $city) {
+        $query = $pdo->prepare("DELETE FROM ".METEO_TABLE." WHERE ville = :city;");
+        $query->execute([
+            ":city" => "$city",
+        ]);
+    }
+
+    $pdo = NULL;
+    $query = NULL;
 }
 
- ?>
+function addEntry($data) {
+    $pdo = bdConnect();
+
+    if ($pdo) {
+        $query = $pdo->prepare("INSERT INTO ".METEO_TABLE." (ville, haut, bas) VALUES (:city, :max, :min) ON DUPLICATE KEY UPDATE ville = :city, haut = :max, bas = :min;");
+        $query->execute([
+            ":city" => "$data[city]",
+            ":min" => "$data[min]",
+            ":max" => "$data[max]",
+        ]);
+
+        $pdo = NULL;
+        $query = NULL;
+    }
+}
+
+function start() {
+    $deleteCities = (isset($_POST['delete-city'])) ? $_POST['delete-city'] : NULL;
+
+    // delete selected entries
+    if ($deleteCities) {
+        deleteEntry($deleteCities);
+    }
+
+    // Add an entry
+    if (!empty($_POST['city']) && !empty($_POST['max']) && !empty($_POST['min']) ) {
+
+        $data = [
+            "city" => $_POST['city'],
+            "max" => $_POST['max'],
+            "min" => $_POST['min'],
+        ];
+
+        addEntry($data);
+    }
+
+    showMeteoTable();
+}
+
+?>
+
+<form method="post" action="">
+    <label for="city">Ville</label>
+    <input type="text" id="city" name="city"><br><br>
+
+    <label for="max">Max temperature</label><br>
+    <input type="number" id="max" name="max"><br>
+
+    <label for="min">Min temperature</label><br>
+    <input type="number" id="min" name="min"><br>
+
+    <input type="submit" name="submit" value="Add / Update">
+
+
+    <?php start() ?>
+
+</form>
