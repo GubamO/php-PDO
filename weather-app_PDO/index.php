@@ -3,8 +3,8 @@
 
 const HOST_NAME	= "mysql";
 const DB_NAME	= "weatherapp";
-const USER_NAME	= "gubamo";
-const PASSWORD	= "Zibulon2303.";
+const USER_NAME	= "root";
+const PASSWORD	= "";
 const METEO_TABLE = "Météo";
 
 function bdConnect() {
